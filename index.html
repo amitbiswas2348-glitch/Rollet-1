@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buckshot Roulette - Multiplayer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: #ff4757;
+            text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+        
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .player-area {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(20, 20, 40, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .player-area.active {
+            border-color: #ff4757;
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.3);
+        }
+        
+        .player-area.opponent {
+            opacity: 0.8;
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .player-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .player-health {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .health-bar {
+            width: 100px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ff6b81);
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+        
+        .shotgun-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .shotgun {
+            display: inline-block;
+            position: relative;
+            width: 200px;
+            height: 60px;
+            background: linear-gradient(to right, #8B4513, #A0522D, #8B4513);
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .shotgun-barrel {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+        }
+        
+        .chamber {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        
+        .shell {
+            width: 30px;
+            height: 50px;
+            background: #ffd700;
+            border-radius: 3px;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .shell.live {
+            background: linear-gradient(to bottom, #ff4757, #c0392b);
+        }
+        
+        .shell.blank {
+            background: linear-gradient(to bottom, #747d8c, #57606f);
+        }
+        
+        .shell.used {
+            background: linear-gradient(to bottom, #2f3542, #1e2127);
+            opacity: 0.5;
+        }
+        
+        .hand-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            min-height: 150px;
+        }
+        
+        .card {
+            width: 80px;
+            height: 120px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            user-select: none;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card.live-round {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            color: #c0392b;
+        }
+        
+        .card.blank-round {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            color: #2c3e50;
+        }
+        
+        .card.item {
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
+            color: #8B4513;
+        }
+        
+        .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+            min-width: 300px;
+            background: rgba(20, 20, 40, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .game-log {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+        
+        .log-entry.system {
+            color: #70a1ff;
+        }
+        
+        .log-entry.player-action {
+            color: #7bed9f;
+        }
+        
+        .log-entry.damage {
+            color: #ff6b81;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+        }
+        
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .multiplayer-panel {
+            background: rgba(20, 20, 40, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+        
+        .status-indicator.connected {
+            background: #2ed573;
+            box-shadow: 0 0 10px #2ed573;
+        }
+        
+        .player-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .player-tag {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .player-tag.you {
+            background: rgba(255, 71, 87, 0.3);
+            border: 1px solid rgba(255, 71, 87, 0.5);
+        }
+        
+        .instructions {
+            background: rgba(20, 20, 40, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #70a1ff;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .turn-indicator {
+            text-align: center;
+            font-size: 1.2rem;
+            padding: 10px;
+            background: rgba(255, 71, 87, 0.2);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .turn-indicator.active {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+            }
+            
+            .player-area, .controls {
+                min-width: 100%;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-gun"></i> BUCKSHOT ROULETTE</h1>
+            <div class="subtitle">Multiplayer Russian Roulette with Items</div>
+            <div class="turn-indicator" id="turnIndicator">YOUR TURN - SHOOT OR USE AN ITEM</div>
+        </header>
+        
+        <div class="game-area">
+            <div class="player-area active" id="player1Area">
+                <div class="player-header">
+                    <div class="player-name">You <span id="player1Name">(Player 1)</span></div>
+                    <div class="player-health">
+                        <span>Health:</span>
+                        <div class="health-bar">
+                            <div class="health-fill" id="player1Health" style="width: 100%"></div>
+                        </div>
+                        <span id="player1HealthText">5/5</span>
+                    </div>
+                </div>
+                
+                <div class="shotgun-area">
+                    <h3>Shotgun</h3>
+                    <div class="shotgun">
+                        <div class="shotgun-barrel"></div>
+                    </div>
+                    <div class="chamber" id="player1Chamber">
+                        <!-- Shells will be generated here -->
+                    </div>
+                </div>
+                
+                <h3>Your Hand</h3>
+                <div class="hand-cards" id="player1Hand">
+                    <!-- Cards will be generated here -->
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="game-log" id="gameLog">
+                    <div class="log-entry system">Welcome to Buckshot Roulette! Connect to start a game.</div>
+                    <div class="log-entry system">Game rules: Take turns firing the shotgun at yourself or your opponent.</div>
+                    <div class="log-entry system">Live rounds deal damage, blanks do nothing. Use items to gain advantage.</div>
+                </div>
+                
+                <div class="buttons">
+                    <button id="shootSelfBtn" disabled>
+                        <i class="fas fa-user"></i> Shoot Yourself
+                    </button>
+                    <button id="shootOpponentBtn" disabled>
+                        <i class="fas fa-crosshairs"></i> Shoot Opponent
+                    </button>
+                    <button id="useItemBtn" disabled>
+                        <i class="fas fa-box-open"></i> Use Item
+                    </button>
+                    <button id="endTurnBtn" disabled>
+                        <i class="fas fa-forward"></i> End Turn
+                    </button>
+                </div>
+                
+                <div class="multiplayer-panel">
+                    <h3><i class="fas fa-network-wired"></i> Multiplayer Connection</h3>
+                    <div class="connection-status">
+                        <div class="status-indicator" id="statusIndicator"></div>
+                        <span id="connectionStatus">Disconnected</span>
+                    </div>
+                    
+                    <div class="buttons">
+                        <button id="createRoomBtn">
+                            <i class="fas fa-plus-circle"></i> Create Room
+                        </button>
+                        <button id="joinRoomBtn">
+                            <i class="fas fa-sign-in-alt"></i> Join Room
+                        </button>
+                        <button id="startGameBtn" disabled>
+                            <i class="fas fa-play"></i> Start Game
+                        </button>
+                    </div>
+                    
+                    <div id="roomInfo" style="display: none; margin-top: 15px;">
+                        <div><strong>Room Code:</strong> <span id="roomCode">XXXX</span></div>
+                        <div><strong>Players:</strong></div>
+                        <div class="player-list" id="playerList">
+                            <!-- Player tags will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="player-area opponent" id="player2Area">
+                <div class="player-header">
+                    <div class="player-name">Opponent <span id="player2Name">(Waiting...)</span></div>
+                    <div class="player-health">
+                        <span>Health:</span>
+                        <div class="health-bar">
+                            <div class="health-fill" id="player2Health" style="width: 100%"></div>
+                        </div>
+                        <span id="player2HealthText">5/5</span>
+                    </div>
+                </div>
+                
+                <div class="shotgun-area">
+                    <h3>Shotgun</h3>
+                    <div class="shotgun">
+                        <div class="shotgun-barrel"></div>
+                    </div>
+                    <div class="chamber" id="player2Chamber">
+                        <!-- Shells will be generated here -->
+                    </div>
+                </div>
+                
+                <h3>Opponent's Hand</h3>
+                <div class="hand-cards" id="player2Hand">
+                    <!-- Cards will be generated here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3><i class="fas fa-info-circle"></i> How to Play</h3>
+            <ul>
+                <li><strong>Live Rounds (Red)</strong>: Deal 1 damage if fired at a player</li>
+                <li><strong>Blank Rounds (Gray)</strong>: Do nothing when fired</li>
+                <li><strong>Items</strong>: Can be used to gain advantages during your turn</li>
+                <li><strong>Turn Order</strong>: Players take turns firing the shotgun at themselves or the opponent</li>
+                <li><strong>Game End</strong>: The game ends when one player's health reaches 0</li>
+                <li><strong>Items include:</strong> Magnifying Glass (see next shell), Hand Saw (double damage), Beer (eject current shell), Cigarettes (heal 1 HP)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Connection Modal -->
+    <div id="connectionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <h2 id="modalTitle" style="margin-bottom: 20px; color: #ff4757;">Join Game</h2>
+            <div id="modalContent">
+                <input type="text" id="roomCodeInput" placeholder="Enter Room Code" style="width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: white; font-size: 1rem;">
+                <input type="text" id="playerNameInput" placeholder="Your Name" style="width: 100%; padding: 12px; margin-bottom: 20px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: white; font-size: 1rem;">
+                <button id="modalConfirmBtn" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Join Room</button>
+            </div>
+            <button id="modalCloseBtn" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; color: #aaa; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; cursor: pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            players: {},
+            currentPlayer: null,
+            shotgun: [],
+            currentShellIndex: 0,
+            gameStarted: false,
+            turnPhase: 'select', // 'select', 'used-item', 'ended'
+            roomCode: null,
+            playerId: null,
+            playerName: 'Player',
+            connection: null,
+            isHost: false
+        };
+
+        // DOM Elements
+        const player1Area = document.getElementById('player1Area');
+        const player2Area = document.getElementById('player2Area');
+        const player1Health = document.getElementById('player1Health');
+        const player2Health = document.getElementById('player2Health');
+        const player1HealthText = document.getElementById('player1HealthText');
+        const player2HealthText = document.getElementById('player2HealthText');
+        const player1Chamber = document.getElementById('player1Chamber');
+        const player2Chamber = document.getElementById('player2Chamber');
+        const player1Hand = document.getElementById('player1Hand');
+        const player2Hand = document.getElementById('player2Hand');
+        const gameLog = document.getElementById('gameLog');
+        const turnIndicator = document.getElementById('turnIndicator');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const player1Name = document.getElementById('player1Name');
+        const player2Name = document.getElementById('player2Name');
+        const roomInfo = document.getElementById('roomInfo');
+        const roomCode = document.getElementById('roomCode');
+        const playerList = document.getElementById('playerList');
+        
+        // Buttons
+        const shootSelfBtn = document.getElementById('shootSelfBtn');
+        const shootOpponentBtn = document.getElementById('shootOpponentBtn');
+        const useItemBtn = document.getElementById('useItemBtn');
+        const endTurnBtn = document.getElementById('endTurnBtn');
+        const createRoomBtn = document.getElementById('createRoomBtn');
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
+        const startGameBtn = document.getElementById('startGameBtn');
+        
+        // Modal elements
+        const connectionModal = document.getElementById('connectionModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        const roomCodeInput = document.getElementById('roomCodeInput');
+        const playerNameInput = document.getElementById('playerNameInput');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        
+        // WebSocket simulation (in a real implementation, this would connect to a server)
+        class MockWebSocket {
+            constructor(url) {
+                this.url = url;
+                this.onopen = null;
+                this.onmessage = null;
+                this.onclose = null;
+                this.onerror = null;
+                
+                // Simulate connection delay
+                setTimeout(() => {
+                    if (this.onopen) this.onopen();
+                }, 500);
+            }
+            
+            send(data) {
+                console.log('WebSocket send:', data);
+                // In a real implementation, this would send to server
+                // For this demo, we'll simulate receiving messages
+                setTimeout(() => {
+                    this.simulateServerResponse(data);
+                }, 300);
+            }
+            
+            simulateServerResponse(data) {
+                const msg = JSON.parse(data);
+                
+                // Simulate server responses based on message type
+                if (msg.type === 'create_room') {
+                    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    const response = {
+                        type: 'room_created',
+                        roomCode: roomCode,
+                        playerId: 'player_' + Date.now()
+                    };
+                    if (this.onmessage) this.onmessage({data: JSON.stringify(response)});
+                } else if (msg.type === 'join_room') {
+                    const response = {
+                        type: 'room_joined',
+                        roomCode: msg.roomCode,
+                        playerId: 'player_' + Date.now(),
+                        players: [
+                            {id: 'player_host', name: 'Host Player'},
+                            {id: 'player_' + Date.now(), name: msg.playerName || 'Player'}
+                        ]
+                    };
+                    if (this.onmessage) this.onmessage({data: JSON.stringify(response)});
+                } else if (msg.type === 'start_game') {
+                    const response = {
+                        type: 'game_started',
+                        roomCode: msg.roomCode,
+                        players: [
+                            {id: 'player1', name: 'Player 1', health: 5},
+                            {id: 'player2', name: 'Player 2', health: 5}
+                        ]
+                    };
+                    if (this.onmessage) this.onmessage({data: JSON.stringify(response)});
+                } else if (msg.type === 'game_action') {
+                    // Simulate opponent's response to game action
+                    setTimeout(() => {
+                        const response = {
+                            type: 'game_update',
+                            action: msg.action,
+                            playerId: msg.playerId,
+                            data: msg.data
+                        };
+                        if (this.onmessage) this.onmessage({data: JSON.stringify(response)});
+                    }, 1000);
+                }
+            }
+            
+            close() {
+                if (this.onclose) this.onclose();
+            }
+        }
+        
+        // Initialize the game
+        function init() {
+            setupEventListeners();
+            updateUI();
+            addLogEntry('Game initialized. Create or join a room to start playing.', 'system');
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Game action buttons
+            shootSelfBtn.addEventListener('click', () => takeAction('shoot_self'));
+            shootOpponentBtn.addEventListener('click', () => takeAction('shoot_opponent'));
+            useItemBtn.addEventListener('click', openItemSelection);
+            endTurnBtn.addEventListener('click', endTurn);
+            
+            // Multiplayer buttons
+            createRoomBtn.addEventListener('click', openCreateRoomModal);
+            joinRoomBtn.addEventListener('click', openJoinRoomModal);
+            startGameBtn.addEventListener('click', startGame);
+            
+            // Modal buttons
+            modalConfirmBtn.addEventListener('click', handleModalConfirm);
+            modalCloseBtn.addEventListener('click', closeModal);
+            
+            // Card click handlers (will be set up when cards are created)
+        }
+        
+        // Modal functions
+        function openCreateRoomModal() {
+            modalTitle.textContent = 'Create Game Room';
+            roomCodeInput.style.display = 'none';
+            playerNameInput.value = gameState.playerName;
+            connectionModal.style.display = 'flex';
+        }
+        
+        function openJoinRoomModal() {
+            modalTitle.textContent = 'Join Game Room';
+            roomCodeInput.style.display = 'block';
+            roomCodeInput.value = '';
+            playerNameInput.value = gameState.playerName;
+            connectionModal.style.display = 'flex';
+        }
+        
+        function closeModal() {
+            connectionModal.style.display = 'none';
+        }
+        
+        function handleModalConfirm() {
+            const isCreating = modalTitle.textContent === 'Create Game Room';
+            
+            if (playerNameInput.value.trim()) {
+                gameState.playerName = playerNameInput.value.trim();
+            }
+            
+            if (isCreating) {
+                createRoom();
+            } else {
+                const code = roomCodeInput.value.trim().toUpperCase();
+                if (code.length === 6) {
+                    joinRoom(code);
+                } else {
+                    alert('Please enter a valid 6-character room code.');
+                    return;
+                }
+            }
+            
+            closeModal();
+        }
+        
+        // Multiplayer connection functions
+        function createRoom() {
+            addLogEntry('Creating game room...', 'system');
+            updateConnectionStatus('Connecting...', false);
+            
+            // In a real implementation, this would connect to a WebSocket server
+            gameState.connection = new MockWebSocket('ws://example.com/game');
+            gameState.isHost = true;
+            
+            gameState.connection.onopen = () => {
+                updateConnectionStatus('Connected', true);
+                addLogEntry('Connected to server.', 'system');
+                
+                // Send create room request
+                gameState.connection.send(JSON.stringify({
+                    type: 'create_room',
+                    playerName: gameState.playerName
+                }));
+            };
+            
+            gameState.connection.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleServerMessage(data);
+            };
+            
+            gameState.connection.onerror = () => {
+                updateConnectionStatus('Connection error', false);
+                addLogEntry('Connection error. Please try again.', 'system');
+            };
+        }
+        
+        function joinRoom(code) {
+            addLogEntry(`Joining room ${code}...`, 'system');
+            updateConnectionStatus('Connecting...', false);
+            
+            // In a real implementation, this would connect to a WebSocket server
+            gameState.connection = new MockWebSocket('ws://example.com/game');
+            gameState.isHost = false;
+            
+            gameState.connection.onopen = () => {
+                updateConnectionStatus('Connected', true);
+                addLogEntry('Connected to server.', 'system');
+                
+                // Send join room request
+                gameState.connection.send(JSON.stringify({
+                    type: 'join_room',
+                    roomCode: code,
+                    playerName: gameState.playerName
+                }));
+            };
+            
+            gameState.connection.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleServerMessage(data);
+            };
+            
+            gameState.connection.onerror = () => {
+                updateConnectionStatus('Connection error', false);
+                addLogEntry('Connection error. Please try again.', 'system');
+            };
+        }
+        
+        function handleServerMessage(data) {
+            console.log('Server message:', data);
+            
+            switch(data.type) {
+                case 'room_created':
+                    gameState.roomCode = data.roomCode;
+                    gameState.playerId = data.playerId;
+                    player1Name.textContent = `(${gameState.playerName})`;
+                    showRoomInfo();
+                    addLogEntry(`Room created! Code: ${data.roomCode}`, 'system');
+                    addLogEntry('Share this code with your friend to play together.', 'system');
+                    updatePlayerList([{id: gameState.playerId, name: gameState.playerName}]);
+                    break;
+                    
+                case 'room_joined':
+                    gameState.roomCode = data.roomCode;
+                    gameState.playerId = data.playerId;
+                    player1Name.textContent = `(${gameState.playerName})`;
+                    showRoomInfo();
+                    addLogEntry(`Joined room ${data.roomCode}`, 'system');
+                    updatePlayerList(data.players);
+                    break;
+                    
+                case 'player_joined':
+                    addLogEntry(`${data.playerName} joined the game.`, 'system');
+                    updatePlayerList(data.players);
+                    break;
+                    
+                case 'game_started':
+                    gameState.gameStarted = true;
+                    startGameBtn.disabled = true;
+                    addLogEntry('Game started!', 'system');
+                    initializeGame(data.players);
+                    break;
+                    
+                case 'game_update':
+                    handleGameUpdate(data);
+                    break;
+                    
+                case 'player_disconnected':
+                    addLogEntry(`${data.playerName} disconnected.`, 'system');
+                    updatePlayerList(data.players);
+                    break;
+            }
+        }
+        
+        function showRoomInfo() {
+            roomInfo.style.display = 'block';
+            roomCode.textContent = gameState.roomCode;
+            
+            if (gameState.isHost) {
+                startGameBtn.disabled = false;
+            }
+        }
+        
+        function updatePlayerList(players) {
+            playerList.innerHTML = '';
+            
+            players.forEach(player => {
+                const playerTag = document.createElement('div');
+                playerTag.className = 'player-tag';
+                if (player.id === gameState.playerId) {
+                    playerTag.className += ' you';
+                }
+                
+                playerTag.innerHTML = `
+                    <i class="fas fa-user"></i>
+                    <span>${player.name} ${player.id === gameState.playerId ? '(You)' : ''}</span>
+                `;
+                
+                playerList.appendChild(playerTag);
+                
+                // Update opponent name if applicable
+                if (player.id !== gameState.playerId && gameState.gameStarted) {
+                    player2Name.textContent = `(${player.name})`;
+                }
+            });
+        }
+        
+        function startGame() {
+            if (!gameState.isHost) return;
+            
+            addLogEntry('Starting game...', 'system');
+            
+            // Send start game request to server
+            gameState.connection.send(JSON.stringify({
+                type: 'start_game',
+                roomCode: gameState.roomCode
+            }));
+        }
+        
+        // Game logic functions
+        function initializeGame(players) {
+            // Initialize players
+            gameState.players = {};
+            players.forEach((player, index) => {
+                gameState.players[player.id] = {
+                    id: player.id,
+                    name: player.name,
+                    health: 5,
+                    hand: [],
+                    isHost: index === 0
+                };
+                
+                // Set player names
+                if (player.id === gameState.playerId) {
+                    player1Name.textContent = `(${player.name})`;
+                    gameState.playerName = player.name;
+                } else {
+                    player2Name.textContent = `(${player.name})`;
+                }
+            });
+            
+            // Create shotgun with random shells (4-6 shells, mix of live and blank)
+            const shellCount = Math.floor(Math.random() * 3) + 4; // 4-6 shells
+            gameState.shotgun = [];
+            
+            for (let i = 0; i < shellCount; i++) {
+                gameState.shotgun.push({
+                    type: Math.random() > 0.5 ? 'live' : 'blank',
+                    used: false
+                });
+            }
+            
+            // Shuffle the shotgun shells
+            shuffleArray(gameState.shotgun);
+            
+            // Set starting player randomly
+            const playerIds = Object.keys(gameState.players);
+            gameState.currentPlayer = playerIds[Math.floor(Math.random() * playerIds.length)];
+            
+            // Deal initial items to players
+            dealInitialItems();
+            
+            // Update UI
+            updateUI();
+            
+            // Add game start log
+            addLogEntry(`Game started! ${gameState.players[gameState.currentPlayer].name} goes first.`, 'system');
+            
+            if (gameState.currentPlayer === gameState.playerId) {
+                addLogEntry('Your turn! Choose an action.', 'system');
+                turnIndicator.textContent = 'YOUR TURN - SHOOT OR USE AN ITEM';
+                turnIndicator.classList.add('active');
+            } else {
+                addLogEntry(`Waiting for ${gameState.players[gameState.currentPlayer].name} to take their turn...`, 'system');
+                turnIndicator.textContent = `WAITING FOR ${gameState.players[gameState.currentPlayer].name.toUpperCase()}`;
+                turnIndicator.classList.add('active');
+            }
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        function dealInitialItems() {
+            const itemTypes = ['magnifying_glass', 'hand_saw', 'beer', 'cigarettes'];
+            
+            // Deal 2 random items to each player
+            for (const playerId in gameState.players) {
+                const player = gameState.players[playerId];
+                player.hand = [];
+                
+                // Each player gets 2 random items
+                for (let i = 0; i < 2; i++) {
+                    const randomItem = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+                    player.hand.push({
+                        type: 'item',
+                        itemType: randomItem,
+                        id: `item_${playerId}_${Date.now()}_${i}`
+                    });
+                }
+            }
+        }
+        
+        function updateUI() {
+            // Update health displays
+            const player1 = gameState.players && gameState.players[gameState.playerId];
+            const player2 = gameState.players && Object.values(gameState.players).find(p => p.id !== gameState.playerId);
+            
+            if (player1) {
+                const healthPercent = (player1.health / 5) * 100;
+                player1Health.style.width = `${healthPercent}%`;
+                player1HealthText.textContent = `${player1.health}/5`;
+                
+                // Update player area active state
+                if (gameState.currentPlayer === gameState.playerId && gameState.gameStarted) {
+                    player1Area.classList.add('active');
+                    player2Area.classList.remove('active');
+                } else {
+                    player1Area.classList.remove('active');
+                    player2Area.classList.add('active');
+                }
+            }
+            
+            if (player2) {
+                const healthPercent = (player2.health / 5) * 100;
+                player2Health.style.width = `${healthPercent}%`;
+                player2HealthText.textContent = `${player2.health}/5`;
+            }
+            
+            // Update shotgun displays
+            updateShotgunDisplay();
+            
+            // Update hand displays
+            updateHandDisplays();
+            
+            // Update button states
+            updateButtonStates();
+        }
+        
+        function updateShotgunDisplay() {
+            // Clear chambers
+            player1Chamber.innerHTML = '';
+            player2Chamber.innerHTML = '';
+            
+            if (!gameState.shotgun || gameState.shotgun.length === 0) return;
+            
+            // Create shell elements for player 1 view
+            gameState.shotgun.forEach((shell, index) => {
+                const shellElement = document.createElement('div');
+                shellElement.className = 'shell';
+                
+                if (shell.used) {
+                    shellElement.classList.add('used');
+                } else if (shell.type === 'live') {
+                    shellElement.classList.add('live');
+                } else {
+                    shellElement.classList.add('blank');
+                }
+                
+                // Show the current shell indicator
+                if (index === gameState.currentShellIndex) {
+                    shellElement.style.boxShadow = '0 0 10px white';
+                }
+                
+                player1Chamber.appendChild(shellElement.cloneNode(true));
+                player2Chamber.appendChild(shellElement);
+            });
+        }
+        
+        function updateHandDisplays() {
+            // Clear hands
+            player1Hand.innerHTML = '';
+            player2Hand.innerHTML = '';
+            
+            if (!gameState.players) return;
+            
+            const player1 = gameState.players[gameState.playerId];
+            const player2 = Object.values(gameState.players).find(p => p.id !== gameState.playerId);
+            
+            // Display player 1's hand
+            if (player1 && player1.hand) {
+                player1.hand.forEach((card, index) => {
+                    const cardElement = createCardElement(card, index, true);
+                    player1Hand.appendChild(cardElement);
+                });
+            }
+            
+            // Display player 2's hand (face down for opponent)
+            if (player2) {
+                const opponentCardCount = player2.hand ? player2.hand.length : 0;
+                for (let i = 0; i < opponentCardCount; i++) {
+                    const cardElement = document.createElement('div');
+                    cardElement.className = 'card';
+                    cardElement.innerHTML = `
+                        <div class="card-icon"><i class="fas fa-question"></i></div>
+                        <div>Hidden</div>
+                    `;
+                    player2Hand.appendChild(cardElement);
+                }
+            }
+        }
+        
+        function createCardElement(card, index, isOwnCard) {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            cardElement.dataset.index = index;
+            
+            // Set card appearance based on type
+            if (card.type === 'item') {
+                cardElement.classList.add('item');
+                
+                let icon = 'fa-question';
+                let name = 'Item';
+                
+                switch(card.itemType) {
+                    case 'magnifying_glass':
+                        icon = 'fa-search';
+                        name = 'Magnifier';
+                        break;
+                    case 'hand_saw':
+                        icon = 'fa-cut';
+                        name = 'Hand Saw';
+                        break;
+                    case 'beer':
+                        icon = 'fa-beer';
+                        name = 'Beer';
+                        break;
+                    case 'cigarettes':
+                        icon = 'fa-smoking';
+                        name = 'Cigarettes';
+                        break;
+                }
+                
+                cardElement.innerHTML = `
+                    <div class="card-icon"><i class="fas ${icon}"></i></div>
+                    <div>${name}</div>
+                `;
+                
+                // Add click handler for items
+                if (isOwnCard && gameState.currentPlayer === gameState.playerId && gameState.turnPhase === 'select') {
+                    cardElement.addEventListener('click', () => useItem(card.itemType, index));
+                } else {
+                    cardElement.classList.add('disabled');
+                }
+            }
+            
+            return cardElement;
+        }
+        
+        function updateButtonStates() {
+            const isMyTurn = gameState.currentPlayer === gameState.playerId;
+            const gameActive = gameState.gameStarted;
+            
+            shootSelfBtn.disabled = !isMyTurn || !gameActive || gameState.turnPhase !== 'select';
+            shootOpponentBtn.disabled = !isMyTurn || !gameActive || gameState.turnPhase !== 'select';
+            useItemBtn.disabled = !isMyTurn || !gameActive || gameState.turnPhase !== 'select';
+            endTurnBtn.disabled = !isMyTurn || !gameActive || gameState.turnPhase === 'select';
+        }
+        
+        function updateConnectionStatus(status, connected) {
+            connectionStatus.textContent = status;
+            statusIndicator.className = 'status-indicator';
+            if (connected) {
+                statusIndicator.classList.add('connected');
+            }
+        }
+        
+        function addLogEntry(message, type = 'system') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}] ${message}`;
+            
+            gameLog.appendChild(logEntry);
+            gameLog.scrollTop = gameLog.scrollHeight;
+        }
+        
+        // Game action functions
+        function takeAction(action) {
+            if (gameState.currentPlayer !== gameState.playerId) return;
+            if (gameState.turnPhase !== 'select') return;
+            
+            const currentShell = gameState.shotgun[gameState.currentShellIndex];
+            if (!currentShell || currentShell.used) return;
+            
+            // Mark shell as used
+            currentShell.used = true;
+            
+            let targetPlayerId, damage = 0;
+            const playerName = gameState.players[gameState.playerId].name;
+            
+            if (action === 'shoot_self') {
+                targetPlayerId = gameState.playerId;
+                addLogEntry(`${playerName} shot themselves.`, 'player-action');
+            } else {
+                // Find opponent ID
+                targetPlayerId = Object.keys(gameState.players).find(id => id !== gameState.playerId);
+                addLogEntry(`${playerName} shot their opponent.`, 'player-action');
+            }
+            
+            // Apply damage if it's a live round
+            if (currentShell.type === 'live') {
+                gameState.players[targetPlayerId].health--;
+                damage = 1;
+                addLogEntry(`LIVE ROUND! ${gameState.players[targetPlayerId].name} took ${damage} damage.`, 'damage');
+                
+                // Check for game over
+                if (gameState.players[targetPlayerId].health <= 0) {
+                    endGame(targetPlayerId);
+                    return;
+                }
+            } else {
+                addLogEntry(`BLANK ROUND. No damage dealt.`, 'system');
+            }
+            
+            // Move to next shell
+            gameState.currentShellIndex = (gameState.currentShellIndex + 1) % gameState.shotgun.length;
+            
+            // If we've looped through all shells, reshuffle and reset
+            if (gameState.shotgun.every(shell => shell.used)) {
+                addLogEntry('All shells used! Reloading shotgun...', 'system');
+                reloadShotgun();
+            }
+            
+            // Change turn phase
+            gameState.turnPhase = 'used-item';
+            
+            // Update UI
+            updateUI();
+            
+            // In a real implementation, send action to server
+            if (gameState.connection) {
+                gameState.connection.send(JSON.stringify({
+                    type: 'game_action',
+                    action: action,
+                    playerId: gameState.playerId,
+                    data: {
+                        targetPlayerId: targetPlayerId,
+                        damage: damage,
+                        shellType: currentShell.type
+                    }
+                }));
+            }
+        }
+        
+        function openItemSelection() {
+            if (gameState.currentPlayer !== gameState.playerId) return;
+            if (gameState.turnPhase !== 'select') return;
+            
+            // For this demo, we'll just use the first item
+            const player = gameState.players[gameState.playerId];
+            if (player.hand.length > 0) {
+                useItem(player.hand[0].itemType, 0);
+            }
+        }
+        
+        function useItem(itemType, handIndex) {
+            if (gameState.currentPlayer !== gameState.playerId) return;
+            if (gameState.turnPhase !== 'select') return;
+            
+            const player = gameState.players[gameState.playerId];
+            
+            // Apply item effect
+            switch(itemType) {
+                case 'magnifying_glass':
+                    const nextShell = gameState.shotgun[gameState.currentShellIndex];
+                    addLogEntry(`${player.name} used a magnifying glass.`, 'player-action');
+                    addLogEntry(`Next shell is a ${nextShell.type.toUpperCase()} round.`, 'system');
+                    break;
+                    
+                case 'hand_saw':
+                    addLogEntry(`${player.name} used a hand saw.`, 'player-action');
+                    addLogEntry('Next LIVE round will deal double damage!', 'system');
+                    // This would need to be tracked in game state
+                    break;
+                    
+                case 'beer':
+                    addLogEntry(`${player.name} used a beer.`, 'player-action');
+                    addLogEntry('Ejecting the current shell without firing.', 'system');
+                    
+                    // Mark current shell as used without firing
+                    gameState.shotgun[gameState.currentShellIndex].used = true;
+                    gameState.currentShellIndex = (gameState.currentShellIndex + 1) % gameState.shotgun.length;
+                    
+                    // If we've looped through all shells, reshuffle and reset
+                    if (gameState.shotgun.every(shell => shell.used)) {
+                        addLogEntry('All shells used! Reloading shotgun...', 'system');
+                        reloadShotgun();
+                    }
+                    break;
+                    
+                case 'cigarettes':
+                    addLogEntry(`${player.name} used cigarettes.`, 'player-action');
+                    addLogEntry(`${player.name} healed 1 HP.`, 'system');
+                    
+                    // Heal 1 HP (max 5)
+                    player.health = Math.min(5, player.health + 1);
+                    break;
+            }
+            
+            // Remove item from hand
+            player.hand.splice(handIndex, 1);
+            
+            // Change turn phase
+            gameState.turnPhase = 'used-item';
+            
+            // Update UI
+            updateUI();
+            
+            // In a real implementation, send action to server
+            if (gameState.connection) {
+                gameState.connection.send(JSON.stringify({
+                    type: 'game_action',
+                    action: 'use_item',
+                    playerId: gameState.playerId,
+                    data: {
+                        itemType: itemType
+                    }
+                }));
+            }
+        }
+        
+        function endTurn() {
+            if (gameState.currentPlayer !== gameState.playerId) return;
+            
+            // Switch to next player
+            const playerIds = Object.keys(gameState.players);
+            const currentIndex = playerIds.indexOf(gameState.currentPlayer);
+            gameState.currentPlayer = playerIds[(currentIndex + 1) % playerIds.length];
+            
+            // Reset turn phase
+            gameState.turnPhase = 'select';
+            
+            // Update UI
+            updateUI();
+            
+            addLogEntry(`Turn ended. ${gameState.players[gameState.currentPlayer].name}'s turn.`, 'system');
+            
+            if (gameState.currentPlayer === gameState.playerId) {
+                addLogEntry('Your turn! Choose an action.', 'system');
+                turnIndicator.textContent = 'YOUR TURN - SHOOT OR USE AN ITEM';
+            } else {
+                addLogEntry(`Waiting for ${gameState.players[gameState.currentPlayer].name} to take their turn...`, 'system');
+                turnIndicator.textContent = `WAITING FOR ${gameState.players[gameState.currentPlayer].name.toUpperCase()}`;
+            }
+            
+            // In a real implementation, send action to server
+            if (gameState.connection) {
+                gameState.connection.send(JSON.stringify({
+                    type: 'game_action',
+                    action: 'end_turn',
+                    playerId: gameState.playerId
+                }));
+            }
+        }
+        
+        function handleGameUpdate(data) {
+            // Handle game update from server
+            // In a real implementation, this would update the game state based on server data
+            addLogEntry(`Game update received: ${data.action}`, 'system');
+        }
+        
+        function reloadShotgun() {
+            // Reset all shells to unused and reshuffle
+            gameState.shotgun.forEach(shell => {
+                shell.used = false;
+                shell.type = Math.random() > 0.5 ? 'live' : 'blank';
+            });
+            
+            shuffleArray(gameState.shotgun);
+            gameState.currentShellIndex = 0;
+        }
+        
+        function endGame(loserId) {
+            const winnerId = Object.keys(gameState.players).find(id => id !== loserId);
+            const winner = gameState.players[winnerId];
+            const loser = gameState.players[loserId];
+            
+            addLogEntry(`${loser.name} has been eliminated!`, 'damage');
+            addLogEntry(`${winner.name} wins the game!`, 'player-action');
+            
+            // Disable all game actions
+            gameState.gameStarted = false;
+            updateUI();
+            
+            turnIndicator.textContent = `GAME OVER - ${winner.name.toUpperCase()} WINS!`;
+            turnIndicator.style.background = 'rgba(46, 213, 115, 0.2)';
+            
+            // Show restart option
+            setTimeout(() => {
+                if (confirm(`Game over! ${winner.name} wins!\n\nWould you like to play again?`)) {
+                    resetGame();
+                }
+            }, 1000);
+        }
+        
+        function resetGame() {
+            // Reset game state but keep connection
+            gameState.currentPlayer = null;
+            gameState.shotgun = [];
+            gameState.currentShellIndex = 0;
+            gameState.gameStarted = false;
+            gameState.turnPhase = 'select';
+            
+            // Reset UI
+            player1Health.style.width = '100%';
+            player2Health.style.width = '100%';
+            player1HealthText.textContent = '5/5';
+            player2HealthText.textContent = '5/5';
+            
+            turnIndicator.textContent = '';
+            turnIndicator.classList.remove('active');
+            turnIndicator.style.background = '';
+            
+            // If host, can start a new game
+            if (gameState.isHost) {
+                startGameBtn.disabled = false;
+            }
+            
+            addLogEntry('Game reset. Ready to start a new game.', 'system');
+        }
+        
+        // Initialize the game when page loads
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
